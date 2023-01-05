@@ -1,30 +1,18 @@
 class Solution {
 public:
-    int solve(long long a,long long b,string c){
-        if(c=="+")
-            return a+b;
-        if(c=="-")
-            return b-a;
-        if(c=="*")
-            return a*b;
-        if(c=="/")
-            return b/a;
-        return 0;
-    }
-    int evalRPN(vector<string>& s) {
-        stack<long long> st;
-        for(auto it:s){
-            if(it=="+" || it=="-"|| it=="*" || it=="/"){
-                int a=(st.top());
-                st.pop();
-                int b=(st.top());
-                st.pop();
-                st.push(solve(a,b,it));
-            }
-            else{
-                st.push(stoi(it));
-            }
-        }
-        return (st.top());
-    }
+   int evalRPN(vector<string>& tokens) {
+	int top = 0;
+	for(auto& t : tokens) 
+		if(t == "+" || t == "-" || t == "*" || t == "/") {
+			int op1 = stoi(tokens[--top]); 
+			int op2 = stoi(tokens[--top]); 
+			if(t == "+") op1 = op2 + op1;
+			if(t == "-") op1 = op2 - op1;
+			if(t == "/") op1 = op2 / op1;
+			if(t == "*") op1 = op2 * op1;   
+			tokens[top++] = to_string(op1);
+		}
+		else tokens[top++] = t;
+	return stoi(tokens[0]);
+}
 };
