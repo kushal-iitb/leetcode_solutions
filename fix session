@@ -1,54 +1,53 @@
 #include <iostream>
-#include <fix8/f8includes.hpp>
-#include <fix8/fofihdr.hpp>
+#include <fix8/session.hpp>
+#include <fix8/config.hpp>
+#include <fix8/logger.hpp>
 
 // Define your FIX session class
 class MyFIXSession : public fix8::Session<MyFIXSession>
 {
 public:
-    MyFIXSession(const fix8::f8String& cfg_file, const fix8::SessionID& sid)
-        : fix8::Session<MyFIXSession>(cfg_file, sid)
+    MyFIXSession(const FIX8::SessionID& sid, const FIX8::Config::SessionSettings& settings)
+        : fix8::Session<MyFIXSession>(sid, settings)
     {}
 
     // Implement necessary session methods
-    virtual void on_application(const fix8::CBuff& buf)
+    virtual bool handle_application(const FIX8::Message*& msg)
     {
         // Process incoming application-level messages
+        return true;
     }
 
-    virtual void on_admin(const fix8::CBuff& buf)
+    virtual bool handle_admin(const FIX8::Message*& msg)
     {
         // Process incoming administrative messages
-    }
-
-    virtual bool send(const std::string& msg)
-    {
-        // Send FIX message
-        return send_application(msg);
+        return true;
     }
 };
 
 int main()
 {
     // Initialize session configuration
-    fix8::SessionID sid("SenderCompID", "TargetCompID", "SenderSubID", "TargetSubID");
-    fix8::f8String cfg_file("config_file.ini");
+    FIX8::SessionID sid("SenderCompID", "TargetCompID", "SenderSubID", "TargetSubID");
+    FIX8::Config::SessionSettings settings;
+    settings.from_file("config_file.ini");
 
     // Create and start FIX session
-    MyFIXSession session(cfg_file, sid);
-    session.start();
+    MyFIXSession session(sid, settings);
+    session.initiate();
 
     // Send a FIX message (example)
     session.send("35=D|49=SenderCompID|56=TargetCompID|34=1|52=20240506-10:15:00");
 
     // Keep the session alive
-    while (session.is_logged_on())
+    while (session.isLoggedOn())
     {
         // Handle session-level events
+        session.poll();
     }
 
     // Stop the session
-    session.stop();
+    session.terminate();
 
     return 0;
 }
