@@ -1,41 +1,49 @@
-cc1plus: warning: /usr/local/include/fix8/configuration.hpp: not a directory
-/usr/local/include/fix8/connection.hpp:56:2: error: ‘coroutine’ does not name a type
-   56 |  coroutine _coro;
-      |  ^~~~~~~~~
-/usr/local/include/fix8/connection.hpp:58:2: error: ‘f8_concurrent_queue’ does not name a type
-   58 |  f8_concurrent_queue<T> _msg_queue;
-      |  ^~~~~~~~~~~~~~~~~~~
-/usr/local/include/fix8/connection.hpp:60:2: error: ‘ProcessModel’ does not name a type
-   60 |  ProcessModel _pmodel;
-      |  ^~~~~~~~~~~~
-/usr/local/include/fix8/connection.hpp:61:2: error: ‘f8_thread_cancellation_token’ does not name a type
-   61 |  f8_thread_cancellation_token _cancellation_token;
-      |  ^~~~~~~~~~~~~~~~~~~~~~~~~~~~
-/usr/local/include/fix8/connection.hpp:63:2: error: ‘f8_mutex’ does not name a type
-   63 |  f8_mutex _start_mutex;
-      |  ^~~~~~~~
-/usr/local/include/fix8/connection.hpp:66:2: error: ‘f8_thread’ does not name a type
-   66 |  f8_thread<AsyncSocket> _thread;
-      |  ^~~~~~~~~
-/usr/local/include/fix8/connection.hpp:73:69: error: ‘ProcessModel’ does not name a type
-   73 |  AsyncSocket(Poco::Net::StreamSocket *sock, Session& session, const ProcessModel pmodel=pm_pipeline)
-      |                                                                     ^~~~~~~~~~~~
-/usr/local/include/fix8/connection.hpp:93:22: error: ‘f8_thread_cancellation_token’ has not been declared
-   93 |  virtual int execute(f8_thread_cancellation_token& cancellation_token) { return 0; }
-      |                      ^~~~~~~~~~~~~~~~~~~~~~~~~~~~
-/usr/local/include/fix8/connection.hpp:129:2: error: ‘f8_thread_cancellation_token’ does not name a type
-  129 |  f8_thread_cancellation_token& cancellation_token() { return _cancellation_token; }
-      |  ^~~~~~~~~~~~~~~~~~~~~~~~~~~~
-/usr/local/include/fix8/connection.hpp:73:89: error: ‘pm_pipeline’ was not declared in this scope
-   73 |  AsyncSocket(Poco::Net::StreamSocket *sock, Session& session, const ProcessModel pmodel=pm_pipeline)
-      |                                                                                         ^~~~~~~~~~~
-/usr/local/include/fix8/connection.hpp: In constructor ‘FIX8::AsyncSocket<T>::AsyncSocket(Poco::Net::StreamSocket*, FIX8::Session&, int)’:
-/usr/local/include/fix8/connection.hpp:74:37: error: class ‘FIX8::AsyncSocket<T>’ does not have any field named ‘_pmodel’
-   74 |   : _sock(sock), _session(session), _pmodel(pmodel), _started(false), _thread(std::ref(*this)) {}
-      |                                     ^~~~~~~
-/usr/local/include/fix8/connection.hpp:74:71: error: class ‘FIX8::AsyncSocket<T>’ does not have any field named ‘_thread’
-   74 |   : _sock(sock), _session(session), _pmodel(pmodel), _started(false), _thread(std::ref(*this)) {}
-      |                                                                       ^~~~~~~
-/usr/local/include/fix8/connection.hpp: In member function ‘size_t FIX8::AsyncSocket<T>::queued() const’:
-/usr/local/include/fix8/connection.hpp:81:33: error: ‘_msg_queue’ was not declared in this scope
-"error_log.txt" [readonly] 8411L, 633024C 
+#include <iostream>
+#include <fix8/f8includes.hpp>
+#include <fix8/asio.hpp> // If using ASIO as IO transport
+
+using namespace FIX8;
+
+class MySession : public FIX8::Session
+{
+public:
+    MySession() : FIX8::Session("SenderCompID", "TargetCompID") {}
+
+    virtual void app_to_admin(const std::string& s) override
+    {
+        // Handle application to admin messages
+    }
+
+    virtual void admin_to_app(const std::string& s, const unsigned short MsgType) override
+    {
+        // Handle admin to application messages
+    }
+};
+
+int main()
+{
+    try
+    {
+        f8api::init_logging("log.cfg");
+
+        FIX8::F8MetaCntx context;
+        MySession session;
+        FIX8::Persister persister("store");
+
+        // Configure session parameters
+        session.set_protocol(F8MetaCntx::protocol());
+        session.set_heartbeat_interval(30);
+        session.set_persister(&persister);
+
+        // Start the session
+        session.start(context, "config.cfg");
+        session.wait();
+    }
+    catch (const std::exception& ex)
+    {
+        std::cerr << "Exception: " << ex.what() << std::endl;
+        return 1;
+    }
+
+    return 0;
+}
